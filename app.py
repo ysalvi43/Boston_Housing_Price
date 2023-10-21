@@ -1,38 +1,25 @@
-import json
-import pickle
-from flask import Flask,request,app,jsonify,url_for,render_template
+import streamlit as st
+import joblib
 import numpy as np
-import pandas as pd
+import os
 
-app=Flask(__name__)
-## Load the model
-regmodel=pickle.load(open('regmodel.pkl','rb'))
-scalar=pickle.load(open('scaling.pkl','rb'))
-@app.route('/')
-def home():
-    return render_template('home.html')
+model_path = 'svr_model.pkl'
 
-@app.route('/predict_api',methods=['POST'])
-def predict_api():
-    data=request.json['data']
-    print(data)
-    print(np.array(list(data.values())).reshape(1,-1))
-    new_data=scalar.transform(np.array(list(data.values())).reshape(1,-1))
-    output=regmodel.predict(new_data)
-    print(output[0])
-    return jsonify(output[0])
+svr_model = joblib.load(model_path)
 
-@app.route('/predict',methods=['POST'])
-def predict():
-    data=[float(x) for x in request.form.values()]
-    final_input=scalar.transform(np.array(data).reshape(1,-1))
-    print(final_input)
-    output=regmodel.predict(final_input)[0]
-    return render_template("home.html",prediction_text="The House price prediction is {}".format(output))
+st.title("Boston House Price Prediction App")
 
+crim = st.number_input("Crime Rate (CRIM):")
+zn = st.number_input("Proportion of Residential Land Zoned (ZN):")
+indus = st.number_input("Proportion of Non-Retail Business Acres (INDUS):")
+chas = st.number_input("Charles River Dummy (CHAS):")
+nox = st.number_input("Nitric Oxides Concentration (NOX):")
+rm = st.number_input("Average Number of Rooms (RM):")
+age = st.number_input("Proportion of Owner-Occupied Units Built Before 1940 (AGE):")
+dis = st.number_input("Weighted Distances to Employment Centers (DIS):")
 
-if __name__=="__main__":
-    app.run(debug=True)
-   
-   
-     
+if st.button("Predict"):
+    input_data = np.array([[crim, zn, indus, chas, nox, rm, age, dis]])
+    predicted_value = svr_model.predict(input_data)
+    st.write(f'Predicted House Price: ${predicted_value[0] * 1000:.2f}')
+
